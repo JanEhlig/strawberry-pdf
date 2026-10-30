@@ -1,0 +1,73 @@
+:root {
+  --desk: #e5eae8;
+  --surface: #fbfcfb;
+  --surface-2: #f1f4f3;
+  --surface-3: #e8edeb;
+  --ink: #1c2733;
+  --ink-2: #5a6672;
+  --ink-3: #8a959d;
+  --line: #d3dad8;
+  --line-strong: #b9c3c0;
+  --accent: #b8215e;
+  --accent-strong: #951a4c;
+  --accent-soft: #f8e3ec;
+  --accent-ink: #ffffff;
+  --marker: #ffd83d;
+  --danger: #d93a3f;
+  --danger-soft: #fbe6e6;
+  --success: #1e8e5a;
+  --focus: #b8215e;
+  --selection: rgba(184, 33, 94, 0.2);
+  --field-tint: rgba(47, 63, 203, 0.09);
+  --field-line: rgba(47, 63, 203, 0.38);
+  --paper-shadow: 0 0 0 1px rgba(28, 39, 51, 0.06), 0 1px 2px rgba(28, 39, 51, 0.12), 0 8px 24px -6px rgba(28, 39, 51, 0.18);
+  --float-shadow: 0 1px 1px rgba(28, 39, 51, 0.08), 0 6px 20px -4px rgba(28, 39, 51, 0.22);
+  --scrim: rgba(28, 39, 51, 0.32);
+
+  --font: 'Atkinson Hyperlegible Next Variable', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 20px;
+  --text-xl: 28px;
+
+  --radius-paper: 2px;
+  --radius-control: 8px;
+  --radius-dialog: 14px;
+  --radius-pill: 999px;
+
+  --titlebar-h: 40px;
+  --toolbar-h: 52px;
+  --sidebar-w: 240px;
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --fast: 120ms;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --desk: #1c2122;
+  --surface: #262c2d;
+  --surface-2: #2d3435;
+  --surface-3: #353d3e;
+  --ink: #e7eceb;
+  --ink-2: #a3aead;
+  --ink-3: #7a8584;
+  --line: #3a4344;
+  --line-strong: #4b5556;
+  --accent: #f27ba9;
+  --accent-strong: #f69cbf;
+  --accent-soft: rgba(242, 123, 169, 0.16);
+  --accent-ink: #3d0a20;
+  --danger: #ff6b6f;
+  --danger-soft: rgba(255, 107, 111, 0.14);
+  --success: #4cc68a;
+  --focus: #f27ba9;
+  --selection: rgba(242, 123, 169, 0.3);
+  --field-tint: rgba(142, 153, 255, 0.12);
+  --field-line: rgba(142, 153, 255, 0.5);
+  --paper-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.4), 0 10px 28px -6px rgba(0, 0, 0, 0.55);
+  --float-shadow: 0 1px 1px rgba(0, 0, 0, 0.3), 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+  --scrim: rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}

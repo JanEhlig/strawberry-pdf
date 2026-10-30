@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>Strawberry PDF (16–32 px)</title>
+  <path d="M256 144C282 138 302 136 318 138L432 252C436 278 432 300 426 318C404 392 332 456 256 480C180 456 108 392 86 318C64 230 132 132 256 144Z" fill="#E63946"/>
+  <path d="M318 138L432 252L330 240Z" fill="#FFFFFF"/>
+  <ellipse cx="192" cy="250" rx="16" ry="22" fill="#FFD166"/>
+  <ellipse cx="270" cy="260" rx="16" ry="22" fill="#FFD166"/>
+  <ellipse cx="226" cy="352" rx="16" ry="22" fill="#FFD166"/>
+  <ellipse cx="314" cy="352" rx="16" ry="22" fill="#FFD166"/>
+  <path d="M256 176C220 176 176 158 150 120C190 112 222 120 240 132C232 104 238 72 256 48C274 72 280 104 272 132C290 120 322 112 362 120C336 158 292 176 256 176Z" fill="#2E9E4F"/>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>Strawberry PDF</title>
+  <path d="M256 138C290 133 308 132 322 134L418 230C420 243 420 256 418 270C406 362 330 446 256 474C182 446 106 362 94 270C80 176 160 124 256 138Z" fill="#E63946"/>
+  <path d="M322 134L418 230L334 220Z" fill="#FBE3E1"/>
+  <path d="M334 220L418 230L410 240Z" fill="#C42E3B"/>
+  <ellipse cx="196" cy="222" rx="7" ry="10" fill="#FFD166"/>
+  <ellipse cx="256" cy="212" rx="7" ry="10" fill="#FFD166"/>
+  <ellipse cx="166" cy="280" rx="7" ry="10" fill="#FFD166"/>
+  <ellipse cx="226" cy="272" rx="7" ry="10" fill="#FFD166"/>
+  <ellipse cx="286" cy="272" rx="7" ry="10" fill="#FFD166"/>
+  <ellipse cx="346" cy="280" rx="7" ry="10" fill="#FFD166"/>
+  <ellipse cx="196" cy="334" rx="7" ry="10" fill="#FFD166"/>
+  <ellipse cx="256" cy="328" rx="7" ry="10" fill="#FFD166"/>
+  <ellipse cx="316" cy="334" rx="7" ry="10" fill="#FFD166"/>
+  <ellipse cx="226" cy="388" rx="7" ry="10" fill="#FFD166"/>
+  <ellipse cx="286" cy="388" rx="7" ry="10" fill="#FFD166"/>
+  <path d="M256 160C228 160 196 146 178 124C204 120 226 124 240 132C232 112 236 92 256 76C276 92 280 112 272 132C286 124 308 120 334 124C316 146 284 160 256 160Z" fill="#2E9E4F"/>
+  <rect x="249" y="40" width="14" height="44" rx="7" fill="#2E9E4F"/>
+</svg>

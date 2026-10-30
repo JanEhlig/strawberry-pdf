@@ -1,0 +1,59 @@
+appId: de.strawberrypdf.app
+productName: Strawberry PDF
+copyright: "© 2026 Jan Ehlig"
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**
+  - resources/**
+  - package.json
+asar: true
+
+publish: null
+
+fileAssociations:
+  - ext: pdf
+    name: StrawberryPDF.Document
+    description: PDF-Dokument
+    role: Editor
+    icon: build/icon.ico
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  artifactName: "Strawberry-PDF-Setup-${version}.${ext}"
+  signAndEditExecutable: true
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerLanguages:
+    - de_DE
+    - en_US
+  language: "1031"
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Strawberry PDF
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+
+appx:
+  identityName: NodiaTech.StrawberryPDF
+  publisher: CN=0476D9A1-B94D-4218-AA74-0795E19043D6
+  publisherDisplayName: NodiaTech
+  applicationId: StrawberryPDF
+  displayName: Strawberry PDF
+  backgroundColor: transparent
+  minVersion: 10.0.17763.0
+  maxVersionTested: 10.0.26100.0
+  languages:
+    - de-DE
+    - en-US
+  artifactName: "Strawberry-PDF-${version}.${ext}"

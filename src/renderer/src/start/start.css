@@ -1,0 +1,202 @@
+.start {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 40px 24px;
+  background: var(--desk);
+}
+
+.start-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(320px, 460px);
+  gap: 40px;
+  align-items: start;
+}
+
+.start-sheet {
+  --accent: #b8215e;
+  --accent-strong: #951a4c;
+  --accent-ink: #ffffff;
+  --accent-soft: #f8e3ec;
+  --focus: #b8215e;
+  --surface: #ffffff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 56px 40px 36px 52px;
+  min-height: 440px;
+  justify-content: center;
+  background: #fff;
+  color: #1c2733;
+  border-radius: var(--radius-paper);
+  box-shadow: var(--paper-shadow);
+}
+.start-sheet::after {
+  content: '';
+  position: absolute;
+  inset: -6px -6px -6px -10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 38%, rgba(214, 228, 224, 0.18));
+  box-shadow: 0 0 0 1px rgba(28, 39, 51, 0.07);
+  pointer-events: none;
+}
+:root[data-theme='dark'] .start-sheet::after {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 40%);
+}
+.start-holes {
+  position: absolute;
+  left: 16px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 96px;
+}
+.start-holes span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--desk);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.start-title {
+  margin: 18px 0 6px;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.start-lead {
+  margin: 0 0 28px;
+  max-width: 26ch;
+  font-size: var(--text-md);
+  line-height: 1.5;
+  color: #5a6672;
+}
+.start-shortcut {
+  margin: 14px 0 0;
+  color: #8a959d;
+}
+.start-sheet .kbd {
+  background: #f1f4f3;
+  border-color: #b9c3c0;
+  color: #1c2733;
+}
+.start-combine {
+  margin-top: 22px;
+  color: #b8215e;
+}
+.start-sheet .start-combine:hover:not(:disabled) {
+  background: #f8e3ec;
+}
+
+.start-recent h2 {
+  margin: 8px 0 12px;
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+.start-recent ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.start-empty {
+  margin: 0;
+  padding: 16px 0;
+  color: var(--ink-2);
+  border-top: 1px solid var(--line);
+}
+.recent-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+}
+.recent-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  border-radius: 8px;
+}
+.recent-open:hover {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}
+.recent-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 40px;
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px var(--line);
+}
+.recent-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+.recent-name {
+  font-weight: 600;
+  font-size: var(--text-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-path {
+  font-size: var(--text-xs);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-date {
+  margin-left: auto;
+  padding-left: 12px;
+  font-size: var(--text-xs);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.recent-actions {
+  position: absolute;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--float-shadow);
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease);
+}
+.recent-row:hover .recent-actions,
+.recent-row:focus-within .recent-actions {
+  opacity: 1;
+}
+
+@media (max-width: 860px) {
+  .start-grid {
+    grid-template-columns: minmax(280px, 420px);
+  }
+  .start-sheet {
+    min-height: 340px;
+  }
+}

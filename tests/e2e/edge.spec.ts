@@ -1,0 +1,183 @@
+import { expect, test, type Page } from '@playwright/test'
+import { closeAll, drag, inspect, launch, pagePoint, saveWithShortcut, waitForPage, workingCopy } from './helpers'
+
+test.afterEach(closeAll)
+
+async function gotoPage(win: Page, n: number): Promise<void> {
+  const input = win.locator('.page-input input')
+  await input.click()
+  await input.fill(String(n))
+  await input.press('Enter')
+  await waitForPage(win, n - 1)
+}
+
+test('Tab springt durchs Formular, ohne Ankreuzfelder umzuschalten', async () => {
+  const file = workingCopy('form.pdf')
+  const { win } = await launch([file])
+  await waitForPage(win, 0)
+  const name = await pagePoint(win, 0, 150, 842 - 703)
+  await win.mouse.click(name.x, name.y)
+  await win.locator('input.field-editor').fill('Jan Müller')
+  await win.keyboard.press('Tab')
+  const note = win.locator('textarea.field-editor')
+  await expect(note).toBeFocused()
+  await note.fill('Bitte schnell')
+  await win.keyboard.press('Tab')
+  const checkbox = win.getByRole('checkbox', { name: 'zustimmung' })
+  await expect(checkbox).toBeFocused()
+  await expect(checkbox).toHaveAttribute('aria-checked', 'false')
+  await win.keyboard.press(' ')
+  await expect(checkbox).toHaveAttribute('aria-checked', 'true')
+  await saveWithShortcut(win)
+  const result = inspect(file)
+  expect(result.fields.find((f) => f.name === 'name')?.value).toBe('Jan Müller')
+  expect(result.fields.find((f) => f.name === 'bemerkung')?.value).toBe('Bitte schnell')
+  expect(result.fields.find((f) => f.name === 'zustimmung')?.value).not.toBe('Off')
+})
+
+test('Fenster schließen fragt nach ungespeicherten Änderungen in einem Hintergrund-Tab', async () => {
+  const first = workingCopy('sample.pdf')
+  const { app, win } = await launch([first, workingCopy('form.pdf')])
+  await waitForPage(win, 0)
+  await win.locator('.tab').first().click()
+  await waitForPage(win, 0)
+  await win.keyboard.press('d')
+  await drag(win, await pagePoint(win, 0, 100, 400), await pagePoint(win, 0, 220, 430))
+  await expect(win.locator('.tab').first().locator('.tab-dirty')).toBeVisible()
+  await win.locator('.tab').nth(1).click()
+
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].close())
+  const dialog = win.getByRole('dialog', { name: /Änderungen speichern/ })
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toContainText('sample.pdf')
+  await dialog.getByRole('button', { name: 'Abbrechen' }).click()
+  await expect(win.locator('.tab')).toHaveCount(2)
+
+  const closed = new Promise<void>((resolve) => app.once('close', () => resolve()))
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].close())
+  await Promise.all([closed, win.getByRole('dialog').getByRole('button', { name: 'Nicht speichern' }).click().catch(() => undefined)])
+  expect(inspect(first).annots).toHaveLength(0)
+})
+
+test('Seite bleibt nach dem Schwärzen bedienbar', async () => {
+  const file = workingCopy('sample.pdf')
+  const { win } = await launch([file])
+  await waitForPage(win, 0)
+  await gotoPage(win, 5)
+  await win.keyboard.press('x')
+  await drag(win, await pagePoint(win, 4, 72, 156), await pagePoint(win, 4, 520, 156))
+  await win.getByRole('button', { name: /Schwärzungen anwenden/ }).click()
+  await win.getByRole('button', { name: /Endgültig schwärzen/ }).click()
+  await expect(win.locator('.page[data-page="4"] .pending-redaction')).toHaveCount(0)
+
+  await win.keyboard.press('n')
+  const at = await pagePoint(win, 4, 400, 300)
+  await win.mouse.click(at.x, at.y)
+  await win.locator('.comment-popover textarea').fill('nach dem Schwärzen')
+  await win.locator('.comment-popover .btn-primary').click()
+  await drag(win, at, { x: at.x + 40, y: at.y + 40 })
+  await expect(win.locator('.annot-selection')).toBeVisible()
+  await saveWithShortcut(win)
+  const result = inspect(file)
+  expect(result.text[4]).not.toContain('GEHEIM')
+  expect(result.annots.find((a) => a.type === 'Text')?.contents).toBe('nach dem Schwärzen')
+})
+
+test('Speichern mit nicht angewandten Schwärzungen fragt nach', async () => {
+  const file = workingCopy('sample.pdf')
+  const { win } = await launch([file])
+  await waitForPage(win, 0)
+  await gotoPage(win, 5)
+  await drag(win, await pagePoint(win, 4, 72, 156), await pagePoint(win, 4, 520, 156))
+  await win.locator('.selection-bar button').last().click()
+  await expect(win.getByRole('button', { name: /Schwärzungen anwenden/ })).toBeEnabled()
+  await win.keyboard.press('Control+s')
+  const question = win.getByRole('dialog', { name: /Schwärzungen noch nicht angewandt/ })
+  await expect(question).toBeVisible()
+  await question.getByRole('button', { name: /Jetzt anwenden/ }).click()
+  await win.getByRole('button', { name: /Endgültig schwärzen/ }).click()
+  await expect(win.locator('.toast').filter({ hasText: /Gespeichert/ })).toBeVisible({ timeout: 15_000 })
+  expect(inspect(file).text[4]).not.toContain('GEHEIM')
+})
+
+test('schnelles Wiederöffnen eines Feldes verliert keine Eingabe', async () => {
+  const file = workingCopy('form.pdf')
+  const { win } = await launch([file])
+  await waitForPage(win, 0)
+  const name = await pagePoint(win, 0, 150, 842 - 703)
+  const elsewhere = await pagePoint(win, 0, 400, 60)
+  const input = win.locator('input.field-editor')
+
+  await win.mouse.click(name.x, name.y)
+  await input.fill('Erika Mustermann')
+  await input.press('Enter')
+  await win.mouse.click(name.x, name.y)
+  await expect(input).toHaveValue('Erika Mustermann')
+  await win.mouse.click(elsewhere.x, elsewhere.y)
+  await expect(input).toHaveCount(0)
+
+  await saveWithShortcut(win)
+  expect(inspect(file).fields.find((f) => f.name === 'name')?.value).toBe('Erika Mustermann')
+})
+
+test('schnelles Wiederöffnen eines Textfelds behält die Änderung', async () => {
+  const file = workingCopy('sample.pdf')
+  const { win } = await launch([file])
+  await waitForPage(win, 0)
+  const at = await pagePoint(win, 0, 300, 560)
+  const elsewhere = await pagePoint(win, 0, 560, 60)
+  const editor = win.locator('.freetext-editor')
+
+  await win.keyboard.press('t')
+  await win.mouse.click(at.x, at.y)
+  await editor.fill('Erster Text')
+  await editor.press('Control+Enter')
+  await expect(editor).toHaveCount(0)
+  await win.keyboard.press('v')
+  await win.getByRole('button', { name: /^Kommentare$/ }).click()
+  await expect(win.locator('.comment-item')).toHaveCount(1)
+
+  await win.mouse.dblclick(at.x + 6, at.y + 4)
+  await editor.fill('Zweiter Text')
+  await editor.press('Control+Enter')
+  await win.mouse.dblclick(at.x + 6, at.y + 4)
+  await expect(editor).toHaveValue('Zweiter Text')
+  await win.mouse.click(elsewhere.x, elsewhere.y)
+  await expect(editor).toHaveCount(0)
+
+  await saveWithShortcut(win)
+  expect(inspect(file).annots.find((a) => a.type === 'FreeText')?.contents).toBe('Zweiter Text')
+})
+
+test('Doppelklick markiert ein Wort, Dreifachklick die Zeile', async () => {
+  const { app, win } = await launch([workingCopy('sample.pdf')])
+  await waitForPage(win, 0)
+  const word = await pagePoint(win, 0, 110, 84)
+  const copied = (): Promise<string> => app.evaluate(({ clipboard }) => clipboard.readText())
+
+  const copy = async (): Promise<string> => {
+    await win.keyboard.press('Control+c')
+    return copied()
+  }
+
+  await win.mouse.dblclick(word.x, word.y)
+  await expect(win.locator('.selection-bar')).toBeVisible()
+  await expect.poll(copy).toBe('Mietvertrag')
+
+  await win.mouse.click(word.x, word.y, { clickCount: 3 })
+  await expect.poll(copy).toBe('Mietvertrag Musterstraße 12')
+})
+
+test('Markieren aus dem Seitenrand heraus hebt Text hervor statt einer Fläche', async () => {
+  const file = workingCopy('sample.pdf')
+  const { win } = await launch([file])
+  await waitForPage(win, 0)
+  await win.keyboard.press('h')
+  await drag(win, await pagePoint(win, 0, 20, 60), await pagePoint(win, 0, 300, 140))
+  await win.getByRole('button', { name: /^Kommentare$/ }).click()
+  await expect(win.locator('.comment-item')).toHaveCount(1)
+  await saveWithShortcut(win)
+  const highlights = inspect(file).annots.filter((a) => a.type === 'Highlight')
+  expect(highlights).toHaveLength(1)
+  expect(highlights[0].rect[0]).toBeGreaterThan(50)
+})
