@@ -2,6 +2,7 @@
   position: absolute;
   inset: 0;
   overflow: auto;
+  scrollbar-gutter: stable;
   background: var(--desk);
   outline: none;
 }

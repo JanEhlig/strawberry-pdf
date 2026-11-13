@@ -181,3 +181,27 @@ test('Markieren aus dem Seitenrand heraus hebt Text hervor statt einer Fläche',
   expect(highlights).toHaveLength(1)
   expect(highlights[0].rect[0]).toBeGreaterThan(50)
 })
+
+test('Seitenbreite bleibt im schmalen Fenster ruhig, wenn die Seite gerade so passt', async () => {
+  const { win } = await launch([workingCopy('form.pdf')])
+  await waitForPage(win, 0)
+  const sizes = (): Promise<string[]> =>
+    win.evaluate(
+      () =>
+        new Promise<string[]>((resolve) => {
+          const seen = new Set<string>()
+          let frames = 0
+          const tick = (): void => {
+            const el = document.querySelector<HTMLElement>('.viewer-content')
+            seen.add(`${el?.style.width} ${el?.style.height}`)
+            if (++frames < 30) requestAnimationFrame(tick)
+            else resolve([...seen])
+          }
+          requestAnimationFrame(tick)
+        })
+    )
+  for (let height = 715; height <= 735; height += 4) {
+    await win.setViewportSize({ width: 720, height })
+    await expect.poll(sizes, { timeout: 4000 }).toHaveLength(1)
+  }
+})
