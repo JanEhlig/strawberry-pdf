@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { FontQuery, StrawberryApi, PrintJob, StoreKey } from '@shared/api'
+import type { FontQuery, StrawberryApi, PrintJob, SaveKind, StoreKey } from '@shared/api'
 
 function subscribe<T extends unknown[]>(channel: string, callback: (...args: T) => void): () => void {
   const listener = (_event: Electron.IpcRendererEvent, ...args: unknown[]): void => callback(...(args as T))
@@ -10,7 +10,7 @@ function subscribe<T extends unknown[]>(channel: string, callback: (...args: T) 
 const api: StrawberryApi = {
   getEnvironment: () => ipcRenderer.invoke('app:environment'),
   showOpenDialog: () => ipcRenderer.invoke('file:open-dialog'),
-  showSaveDialog: (defaultPath: string) => ipcRenderer.invoke('file:save-dialog', defaultPath),
+  showSaveDialog: (defaultPath: string, kind: SaveKind) => ipcRenderer.invoke('file:save-dialog', defaultPath, kind),
   readFile: (path: string) => ipcRenderer.invoke('file:read', path),
   writeFile: (path: string, data: Uint8Array) => ipcRenderer.invoke('file:write', path, data),
   getPathForFile: (file: File) => webUtils.getPathForFile(file),
@@ -26,6 +26,7 @@ const api: StrawberryApi = {
   closeWindow: () => ipcRenderer.send('app:close-window'),
   openExternal: (url: string) => ipcRenderer.invoke('shell:open-external', url),
   showItemInFolder: (path: string) => ipcRenderer.send('shell:show-item', path),
+  openPath: (path: string) => ipcRenderer.invoke('shell:open-path', path),
   openDefaultAppsSettings: () => ipcRenderer.send('shell:default-apps'),
   setTitleBarColors: (colors) => ipcRenderer.send('window:title-bar', colors),
   setWindowTitle: (title: string) => ipcRenderer.send('window:title', title),

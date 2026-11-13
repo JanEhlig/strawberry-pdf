@@ -39,6 +39,8 @@ export interface WriteFileError {
   message: string
 }
 
+export type SaveKind = 'pdf' | 'docx' | 'xlsx'
+
 export interface FontQuery {
   name: string
   bold: boolean
@@ -67,7 +69,7 @@ export interface PrintJob {
 export interface StrawberryApi {
   getEnvironment(): Promise<AppEnvironment>
   showOpenDialog(): Promise<string[]>
-  showSaveDialog(defaultPath: string): Promise<string | null>
+  showSaveDialog(defaultPath: string, kind: SaveKind): Promise<string | null>
   readFile(path: string): Promise<Uint8Array>
   writeFile(path: string, data: Uint8Array): Promise<void>
   getPathForFile(file: File): string
@@ -83,6 +85,7 @@ export interface StrawberryApi {
   closeWindow(): void
   openExternal(url: string): Promise<void>
   showItemInFolder(path: string): void
+  openPath(path: string): Promise<void>
   openDefaultAppsSettings(): void
   setTitleBarColors(colors: { color: string; symbolColor: string }): void
   setWindowTitle(title: string): void

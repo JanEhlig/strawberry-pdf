@@ -2,6 +2,8 @@ import {
   Combine,
   Ellipsis,
   FileDown,
+  FileSpreadsheet,
+  FileText,
   FolderOpen,
   Highlighter,
   Info,
@@ -32,6 +34,7 @@ import { openProperties } from '@renderer/dialogs/PropertiesDialog'
 import { openSettings } from '@renderer/dialogs/SettingsDialog'
 import { openShortcuts } from '@renderer/dialogs/ShortcutsDialog'
 import { setTool, useApp, type TabEntry } from '@renderer/state/appStore'
+import { exportTab } from '@renderer/state/export'
 import { combineFiles, promptOpen, saveTab } from '@renderer/state/files'
 import { PageTray } from '@renderer/organize/PageTray'
 import { printTab } from '@renderer/state/print'
@@ -174,6 +177,12 @@ function MoreMenu({ tab }: { tab: TabEntry | null }): React.JSX.Element {
             </MenuItem>
             <MenuItem icon={<FileDown size={17} />} disabled={!tab} onClick={run(() => tab && void saveTab(tab, 'flatten'))}>
               {t('menu.saveFlat')}
+            </MenuItem>
+            <MenuItem icon={<FileText size={17} />} disabled={!tab} onClick={run(() => tab && void exportTab(tab, 'docx'))}>
+              {t('menu.exportWord')}
+            </MenuItem>
+            <MenuItem icon={<FileSpreadsheet size={17} />} disabled={!tab} onClick={run(() => tab && void exportTab(tab, 'xlsx'))}>
+              {t('menu.exportExcel')}
             </MenuItem>
             <MenuItem icon={<Printer size={17} />} hint={`${t('key.ctrl')}+P`} disabled={!tab} onClick={run(() => tab && void printTab(tab))}>
               {t('menu.print')}

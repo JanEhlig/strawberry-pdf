@@ -19,6 +19,7 @@ A free PDF reader and editor for Windows, for everything you need day to day. No
 | **Organize pages** | **Pages** opens the page overview. Reorder pages by dragging, rotate, delete, insert blank pages or save a selection as a new PDF. |
 | **Combine PDFs** | Choose **Combine PDFs** on the start screen or in the ⋯ menu, or drop a PDF into the page overview. Form fields, notes and links are preserved. |
 | **Save** | Ctrl+S saves. "Save as" and "Copy with embedded annotations" are in the ⋯ menu. |
+| **Export to Word and Excel** | Choose **Export to Word** or **Export to Excel** in the ⋯ menu. Word files keep paragraphs, fonts, colors, tables and images. Excel files get one sheet per page, with tables in rows and columns and amounts, percentages and dates as real numbers. Form field values and annotations are included, and scanned pages with recognized text are exported as text. |
 | **Undo** | Ctrl+Z and Ctrl+Y, even after saving. |
 
 Press **F1** for all keyboard shortcuts.
@@ -57,8 +58,8 @@ Strawberry PDF uses a **layered architecture following the ports and adapters pa
 | Layer | Location | Responsibility |
 |---|---|---|
 | **UI** | `src/renderer/src/app`, `chrome`, `viewer`, `sidebar`, `organize`, `dialogs`, `start`, `ui` | React components grouped by feature. `ui` is the shared component library. |
-| **Application** | `src/renderer/src/state` | Per-document and app state (Zustand stores, unidirectional data flow) and use cases such as open, save, pages, redaction and printing. Every document mutation goes through this layer. |
-| **Core** | `src/renderer/src/engine/core.ts` | All PDF logic, built on MuPDF. Independent of the UI and Electron, and tested directly in Node. |
+| **Application** | `src/renderer/src/state` | Per-document and app state (Zustand stores, unidirectional data flow) and use cases such as open, save, export, pages, redaction and printing. Every document mutation goes through this layer. |
+| **Core** | `src/renderer/src/engine` (entry point `core.ts`) | All PDF logic, built on MuPDF, including text editing and the Word and Excel export in `engine/export`. Independent of the UI and Electron, and tested directly in Node. |
 | **Adapters** | `src/renderer/src/engine/client.ts`, `worker.ts`, `src/renderer/src/platform` | Connect the core through a web worker (RPC with a render queue) and the app to Electron, with a browser fallback. |
 | **Host** | `src/main`, `src/preload`, `src/shared` | Electron main process: windows, file access, atomic saving, printing, installed fonts, single instance. The inter-process contract is defined in `src/shared/api.ts` and exposed by `src/preload`. |
 

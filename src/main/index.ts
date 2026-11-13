@@ -3,7 +3,7 @@ import { existsSync, statSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { userInfo } from 'node:os'
 import { join, resolve } from 'node:path'
-import type { AppEnvironment, FontQuery, PrintJob, StoreKey } from '@shared/api'
+import type { AppEnvironment, FontQuery, PrintJob, SaveKind, StoreKey } from '@shared/api'
 import { APP_ORIGIN, handleAppScheme, registerAppSchemeAsPrivileged } from './protocol'
 import { addRecent, getRecent, loadStore, removeRecent, saveStore, writeFileAtomic } from './storage'
 import { installedFonts } from './fontIndex'
@@ -11,6 +11,12 @@ import { matchFonts } from './fontMatch'
 import { printPages } from './print'
 
 const isDev = !app.isPackaged && !!process.env['ELECTRON_RENDERER_URL']
+
+const SAVE_FILTERS: Record<SaveKind, Electron.FileFilter> = {
+  pdf: { name: 'PDF', extensions: ['pdf'] },
+  docx: { name: 'Word', extensions: ['docx'] },
+  xlsx: { name: 'Excel', extensions: ['xlsx'] }
+}
 
 registerAppSchemeAsPrivileged()
 
@@ -125,12 +131,10 @@ function registerIpc(): void {
     return result.canceled ? [] : result.filePaths
   })
 
-  ipcMain.handle('file:save-dialog', async (event, defaultPath: string) => {
+  ipcMain.handle('file:save-dialog', async (event, defaultPath: string, kind: SaveKind) => {
     const win = BrowserWindow.fromWebContents(event.sender)
-    const result = await dialog.showSaveDialog(win!, {
-      defaultPath,
-      filters: [{ name: 'PDF', extensions: ['pdf'] }]
-    })
+    const filter = SAVE_FILTERS[kind] ?? SAVE_FILTERS.pdf
+    const result = await dialog.showSaveDialog(win!, { defaultPath, filters: [filter] })
     return result.canceled || !result.filePath ? null : result.filePath
   })
 
@@ -174,6 +178,9 @@ function registerIpc(): void {
     if (/^(https?:|mailto:)/i.test(url)) await shell.openExternal(url)
   })
   ipcMain.on('shell:show-item', (_event, path: string) => shell.showItemInFolder(path))
+  ipcMain.handle('shell:open-path', async (_event, path: string) => {
+    if (/\.(docx|xlsx)$/i.test(path) && existsSync(path)) await shell.openPath(path)
+  })
   ipcMain.on('shell:default-apps', () => void shell.openExternal('ms-settings:defaultapps'))
 
   ipcMain.on('window:title-bar', (event, colors: { color: string; symbolColor: string }) => {

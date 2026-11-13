@@ -1,4 +1,4 @@
-import type { AppEnvironment, FontQuery, StrawberryApi, PrintJob, RecentFile, StoreKey, SystemFont, WriteFileError } from '@shared/api'
+import type { AppEnvironment, FontQuery, StrawberryApi, PrintJob, RecentFile, SaveKind, StoreKey, SystemFont, WriteFileError } from '@shared/api'
 
 export interface OpenedFile {
   name: string
@@ -48,8 +48,14 @@ function pickFilesInBrowser(): Promise<File[]> {
   })
 }
 
-function downloadInBrowser(name: string, data: Uint8Array<ArrayBuffer>): void {
-  const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
+const MIME: Record<SaveKind, string> = {
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+}
+
+function downloadInBrowser(name: string, data: Uint8Array<ArrayBuffer>, kind: SaveKind = 'pdf'): void {
+  const url = URL.createObjectURL(new Blob([data], { type: MIME[kind] }))
   const a = document.createElement('a')
   a.href = url
   a.download = name
@@ -99,15 +105,20 @@ export const platform = {
     }
   },
 
-  async saveAs(suggestedName: string, directoryOf: string | null, data: Uint8Array<ArrayBuffer>): Promise<{ path: string | null; name: string } | null> {
+  async saveAs(
+    suggestedName: string,
+    directoryOf: string | null,
+    data: Uint8Array<ArrayBuffer>,
+    kind: SaveKind = 'pdf'
+  ): Promise<{ path: string | null; name: string } | null> {
     if (!api) {
-      downloadInBrowser(suggestedName, data)
+      downloadInBrowser(suggestedName, data, kind)
       return { path: null, name: suggestedName }
     }
     const dir = directoryOf ? directoryOf.replace(/[\\/][^\\/]*$/, '') : ''
-    const target = await api.showSaveDialog(dir ? `${dir}\\${suggestedName}` : suggestedName)
+    const target = await api.showSaveDialog(dir ? `${dir}\\${suggestedName}` : suggestedName, kind)
     if (!target) return null
-    const path = /\.pdf$/i.test(target) ? target : `${target}.pdf`
+    const path = target.toLowerCase().endsWith(`.${kind}`) ? target : `${target}.${kind}`
     await platform.writeToPath(path, data)
     return { path, name: baseName(path) }
   },
@@ -161,6 +172,9 @@ export const platform = {
   },
   showItemInFolder(path: string): void {
     api?.showItemInFolder(path)
+  },
+  openPath(path: string): void {
+    void api?.openPath(path)
   },
   openDefaultAppsSettings(): void {
     api?.openDefaultAppsSettings()

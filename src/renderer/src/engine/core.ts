@@ -1,6 +1,9 @@
 import * as mupdf from 'mupdf'
 import { stripSubsetTag } from './fonts'
 import { intersectRect, isEmptyRect, mapQuad, mapRect, normalizeRect, quadsBounds, rectMapper } from './geometry'
+import { writeDocx } from './export/docx'
+import { pageModel } from './export/model'
+import { writeXlsx } from './export/xlsx'
 import { analyzeLine, planLineEdit, removeLine, writeLine } from './lineEdit'
 import { child } from './pdfObject'
 import type {
@@ -11,6 +14,8 @@ import type {
   Changed,
   DocInfo,
   DocMetadata,
+  ExportFormat,
+  ExportOptions,
   FieldData,
   FieldType,
   HistoryState,
@@ -1041,6 +1046,12 @@ export class Engine {
     } finally {
       copy.destroy()
     }
+  }
+
+  exportDocument(docId: string, format: ExportFormat, options: ExportOptions): Uint8Array<ArrayBuffer> {
+    const entry = this.entry(docId)
+    const pages = Array.from({ length: entry.doc.countPages() }, (_, i) => pageModel(this.page(entry, i)))
+    return format === 'docx' ? writeDocx(pages) : writeXlsx(pages, options)
   }
 
   private copyOf(entry: DocEntry): mupdf.PDFDocument {

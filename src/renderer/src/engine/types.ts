@@ -228,6 +228,15 @@ export interface TextEditOptions {
 
 export type RedactFill = 'black' | 'white'
 
+export type ExportFormat = 'docx' | 'xlsx'
+
+export type DecimalMark = ',' | '.'
+
+export interface ExportOptions {
+  sheetLabel: string
+  decimalMark: DecimalMark
+}
+
 export interface SaveOptions {
   flatten?: boolean
 }

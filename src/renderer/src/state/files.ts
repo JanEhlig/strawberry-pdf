@@ -113,6 +113,13 @@ export async function combineFiles(): Promise<void> {
 
 export type SaveMode = 'save' | 'saveAs' | 'flatten'
 
+export function saveErrorMessage(error: unknown): string {
+  if (!(error instanceof SaveError)) return t('error.saveFailed', { message: error instanceof Error ? error.message : String(error) })
+  if (error.info.code === 'locked') return t('error.saveLocked')
+  if (error.info.code === 'denied') return t('error.saveDenied')
+  return t('error.saveFailed', { message: error.info.message })
+}
+
 export async function saveTab(tab: TabEntry, mode: SaveMode): Promise<boolean> {
   await tab.store.getState().idle()
   if (!(await settlePendingRedactions(tab))) return false
@@ -153,18 +160,12 @@ export async function saveTab(tab: TabEntry, mode: SaveMode): Promise<boolean> {
     return true
   } catch (error) {
     if (!(error instanceof SaveError)) {
-      toast(t('error.saveFailed', { message: error instanceof Error ? error.message : String(error) }), 'error', undefined, 8000)
+      toast(saveErrorMessage(error), 'error', undefined, 8000)
       return false
     }
-    const message =
-      error.info.code === 'locked'
-        ? t('error.saveLocked')
-        : error.info.code === 'denied'
-          ? t('error.saveDenied')
-          : t('error.saveFailed', { message: error.info.message })
     const choice = await choose({
       title: t('error.saveFailed', { message: '' }).replace(/:\s*$/, ''),
-      body: message,
+      body: saveErrorMessage(error),
       choices: [
         { id: 'cancel', label: t('common.cancel') },
         { id: 'saveAs', label: t('error.saveAsInstead'), variant: 'primary' }

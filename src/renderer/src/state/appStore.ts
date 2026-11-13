@@ -82,10 +82,11 @@ export function updateToolSettings<K extends keyof ToolSettings>(key: K, patch: 
 
 let toastId = 0
 
-export function toast(message: string, tone: Toast['tone'] = 'info', action?: Toast['action'], timeout = 4200): void {
+export function toast(message: string, tone: Toast['tone'] = 'info', action?: Toast['action'], timeout = 4200): number {
   const id = ++toastId
   useApp.setState((s) => ({ toasts: [...s.toasts.slice(-2), { id, message, tone, action }] }))
   setTimeout(() => dismissToast(id), timeout)
+  return id
 }
 
 export function dismissToast(id: number): void {
