@@ -8,8 +8,8 @@ A free PDF reader and editor for Windows, for everything you need day to day. No
 |---|---|
 | **Read** | Open PDFs by double-click, with "Open PDF" or by drag and drop. Multiple files open in tabs. Zoom with Ctrl+mouse wheel, browse thumbnails and the outline, search with Ctrl+F. |
 | **Highlight** | Select text and choose **Highlight**, **Underline** or **Strike through** in the bar below the selection. The **Mark up** tool (H) does the same; hold Alt to mark a free area instead of text. |
-| **Add text** | Choose **Text** (T), click on the page and type. Font, size and color are set in the options bar. |
-| **Edit existing text** | Select a line of text (triple-click selects the whole line) and choose **Edit text**. The original line is replaced in the file, not covered up. |
+| **Add text** | Choose **Text** (T), click an empty spot on the page and type. Font, size and color are set in the options bar. Hold Alt to place new text on top of existing text. |
+| **Edit existing text** | In the **Text** tool, point at a line and click it, or select a line and choose **Edit text**. The new text keeps the original font, size, color and letter spacing, and the size can be adjusted while editing. Characters missing from the embedded font are taken from the same font on the computer or from a close match. The original line is replaced in the file, not covered up. |
 | **Insert images** | In the **Sign** tool (S), click the image icon, pick a PNG or JPEG such as a logo or stamp, and click on the page. |
 | **Comment** | Pin a **Note** (N) or double-click any annotation. Clicking a note opens its comment right away. All comments are listed in the sidebar. |
 | **Draw and shapes** | **Draw** (D) for freehand. **Shapes** (R) for rectangle, ellipse, line and arrow; hold Shift for straight lines and squares. |
@@ -60,7 +60,7 @@ Strawberry PDF uses a **layered architecture following the ports and adapters pa
 | **Application** | `src/renderer/src/state` | Per-document and app state (Zustand stores, unidirectional data flow) and use cases such as open, save, pages, redaction and printing. Every document mutation goes through this layer. |
 | **Core** | `src/renderer/src/engine/core.ts` | All PDF logic, built on MuPDF. Independent of the UI and Electron, and tested directly in Node. |
 | **Adapters** | `src/renderer/src/engine/client.ts`, `worker.ts`, `src/renderer/src/platform` | Connect the core through a web worker (RPC with a render queue) and the app to Electron, with a browser fallback. |
-| **Host** | `src/main`, `src/preload`, `src/shared` | Electron main process: windows, file access, atomic saving, printing, single instance. The inter-process contract is defined in `src/shared/api.ts` and exposed by `src/preload`. |
+| **Host** | `src/main`, `src/preload`, `src/shared` | Electron main process: windows, file access, atomic saving, printing, installed fonts, single instance. The inter-process contract is defined in `src/shared/api.ts` and exposed by `src/preload`. |
 
 Deliberate exceptions: read-only calls such as rendering and text selection go from the UI straight to the engine client. Dialogs that need an answer (password, redaction confirmation, signature) are provided to the application layer as functions returning a promise.
 

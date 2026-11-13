@@ -79,6 +79,7 @@ export const es: Record<MessageKey, string> = {
   'markup.underline': 'Subrayar',
   'markup.strikeout': 'Tachar',
   'text.edit': 'Cambiar el texto existente',
+  'lineEdit.substitute': 'No está en la fuente original: {chars}',
   'shape.square': 'Rectángulo',
   'shape.circle': 'Elipse',
   'shape.line': 'Línea',

@@ -79,6 +79,7 @@ export const pt: Record<MessageKey, string> = {
   'markup.underline': 'Sublinhar',
   'markup.strikeout': 'Riscar',
   'text.edit': 'Alterar texto existente',
+  'lineEdit.substitute': 'Não existe na fonte original: {chars}',
   'shape.square': 'Retângulo',
   'shape.circle': 'Elipse',
   'shape.line': 'Linha',

@@ -114,6 +114,7 @@ export async function combineFiles(): Promise<void> {
 export type SaveMode = 'save' | 'saveAs' | 'flatten'
 
 export async function saveTab(tab: TabEntry, mode: SaveMode): Promise<boolean> {
+  await tab.store.getState().idle()
   if (!(await settlePendingRedactions(tab))) return false
   const state = tab.store.getState()
   const flatten = mode === 'flatten'

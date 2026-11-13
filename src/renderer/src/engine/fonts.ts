@@ -1,11 +1,18 @@
-export function standardFontFor(name: string): string {
-  const n = name.replace(/^[A-Z]{6}\+/, '').toLowerCase()
-  const family = /times|serif|roman|georgia|garamond|minion|cambria|book/.test(n) && !/sans/.test(n) ? 'Times' : /courier|mono|consol|code/.test(n) ? 'Courier' : 'Helvetica'
-  const bold = /bold|black|heavy|semibold|demi/.test(n)
-  const italic = /italic|oblique/.test(n)
-  if (family === 'Times') return bold && italic ? 'Times-BoldItalic' : bold ? 'Times-Bold' : italic ? 'Times-Italic' : 'Times-Roman'
+import type { TextFont } from './types'
+
+export function stripSubsetTag(name: string): string {
+  return name.replace(/^[A-Z]{6}\+/, '')
+}
+
+export function builtinFontFor(font: TextFont): string {
+  const n = stripSubsetTag(font.name).toLowerCase()
+  const mono = font.mono || /courier|mono|consol|code/.test(n)
+  const serif = !mono && (font.serif || (/times|serif|roman|georgia|garamond|minion|cambria|book/.test(n) && !/sans/.test(n)))
+  const bold = font.bold || /bold|black|heavy|semibold|demi/.test(n)
+  const italic = font.italic || /italic|oblique/.test(n)
+  if (serif) return bold && italic ? 'Times-BoldItalic' : bold ? 'Times-Bold' : italic ? 'Times-Italic' : 'Times-Roman'
   const suffix = bold && italic ? '-BoldOblique' : bold ? '-Bold' : italic ? '-Oblique' : ''
-  return family + suffix
+  return (mono ? 'Courier' : 'Helvetica') + suffix
 }
 
 const WIN_ANSI_EXTRA: Record<string, number> = {
@@ -14,13 +21,15 @@ const WIN_ANSI_EXTRA: Record<string, number> = {
   '˜': 0x98, '™': 0x99, 'š': 0x9a, '›': 0x9b, 'œ': 0x9c, 'ž': 0x9e, 'Ÿ': 0x9f
 }
 
-export function encodeWinAnsi(text: string): Uint8Array {
-  const out: number[] = []
-  for (const ch of text) {
-    let code = WIN_ANSI_EXTRA[ch] ?? ch.codePointAt(0) ?? 63
-    if (code > 255 || (code >= 0x80 && code <= 0x9f && !(ch in WIN_ANSI_EXTRA))) code = 63
-    if (code === 0x28 || code === 0x29 || code === 0x5c) out.push(0x5c)
-    out.push(code)
-  }
-  return new Uint8Array(out)
+export function winAnsiCode(ch: string): number | null {
+  const extra = WIN_ANSI_EXTRA[ch]
+  if (extra !== undefined) return extra
+  const code = ch.codePointAt(0) ?? -1
+  if (code < 0x20 || code > 0xff || (code >= 0x7f && code <= 0x9f)) return null
+  return code
 }
+
+export const WIN_ANSI_CHARS: readonly string[] = [
+  ...Array.from({ length: 0xe0 }, (_, i) => String.fromCharCode(0x20 + i)).filter((ch) => winAnsiCode(ch) !== null),
+  ...Object.keys(WIN_ANSI_EXTRA)
+]

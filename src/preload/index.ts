@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { StrawberryApi, PrintJob, StoreKey } from '@shared/api'
+import type { FontQuery, StrawberryApi, PrintJob, StoreKey } from '@shared/api'
 
 function subscribe<T extends unknown[]>(channel: string, callback: (...args: T) => void): () => void {
   const listener = (_event: Electron.IpcRendererEvent, ...args: unknown[]): void => callback(...(args as T))
@@ -29,7 +29,9 @@ const api: StrawberryApi = {
   openDefaultAppsSettings: () => ipcRenderer.send('shell:default-apps'),
   setTitleBarColors: (colors) => ipcRenderer.send('window:title-bar', colors),
   setWindowTitle: (title: string) => ipcRenderer.send('window:title', title),
-  print: (job: PrintJob) => ipcRenderer.invoke('print:pages', job)
+  print: (job: PrintJob) => ipcRenderer.invoke('print:pages', job),
+  matchFonts: (query: FontQuery) => ipcRenderer.invoke('fonts:match', query),
+  readFont: (file: string) => ipcRenderer.invoke('fonts:read', file)
 }
 
 contextBridge.exposeInMainWorld('strawberry', api)

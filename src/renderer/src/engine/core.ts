@@ -1,6 +1,8 @@
 import * as mupdf from 'mupdf'
-import { encodeWinAnsi, standardFontFor } from './fonts'
+import { stripSubsetTag } from './fonts'
 import { intersectRect, isEmptyRect, mapQuad, mapRect, normalizeRect, quadsBounds, rectMapper } from './geometry'
+import { analyzeLine, planLineEdit, removeLine, writeLine } from './lineEdit'
+import { child } from './pdfObject'
 import type {
   AnnotData,
   AnnotKind,
@@ -27,6 +29,8 @@ import type {
   SaveOptions,
   SearchHit,
   SelectMode,
+  TextEditOptions,
+  TextEditPlan,
   TextLine,
   TextSelection
 } from './types'
@@ -129,15 +133,6 @@ function readRole(annot: mupdf.PDFAnnotation): AnnotRole | null {
   return role === 'signature' || role === 'image' || role === 'check' || role === 'cross' || role === 'date'
     ? role
     : null
-}
-
-function child(obj: mupdf.PDFObject, ...path: (string | number)[]): mupdf.PDFObject {
-  let current = obj
-  for (const key of path) {
-    if (current.isNull()) return current
-    current = current.get(key)
-  }
-  return current
 }
 
 function rootOf(doc: mupdf.PDFDocument): mupdf.PDFObject {
@@ -686,16 +681,29 @@ export class Engine {
     let current: TextLine | null = null
     st.walk({
       beginLine(bbox) {
-        current = { bbox: [...bbox] as Rect, size: 0, font: '', text: '', origin: [bbox[0], bbox[3]], color: [0, 0, 0] }
+        current = {
+          bbox: [...bbox] as Rect,
+          size: 0,
+          font: { name: '', bold: false, italic: false, serif: false, mono: false },
+          text: '',
+          origin: [bbox[0], bbox[3]],
+          color: [0, 0, 0]
+        }
       },
       onChar(c, origin, font, size, _quad, color) {
         if (!current) return
-        if (current.text.length === 0) {
+        if (current.text.trim().length === 0 && c.trim()) {
           current.size = size
-          current.font = font.getName()
-          current.origin = [origin[0], origin[1]]
+          current.font = {
+            name: stripSubsetTag(font.getName()),
+            bold: font.isBold(),
+            italic: font.isItalic(),
+            serif: font.isSerif(),
+            mono: font.isMono()
+          }
           current.color = toRGB(color) ?? [0, 0, 0]
         }
+        if (current.text.length === 0) current.origin = [origin[0], origin[1]]
         current.text += c
       },
       endLine() {
@@ -932,70 +940,22 @@ export class Engine {
     }
   }
 
-  replaceTextLine(docId: string, pageIndex: number, line: TextLine, text: string): MutationResult {
+  planTextEdit(docId: string, pageIndex: number, line: TextLine, text?: string): TextEditPlan {
+    const entry = this.entry(docId)
+    return planLineEdit(analyzeLine(this.page(entry, pageIndex), line), text)
+  }
+
+  replaceTextLine(docId: string, pageIndex: number, line: TextLine, text: string, options: TextEditOptions = {}): MutationResult {
     const entry = this.entry(docId)
     const { result: _r, ...rest } = this.mutate(entry, 'edit-text', [pageIndex], () => {
       const page = this.page(entry, pageIndex)
-      const doc = entry.doc
-      const redact = page.createAnnotation('Redact')
-      const [x0, y0, x1, y1] = line.bbox
-      redact.setRect([x0 - 0.5, y0 + 0.5, x1 + 0.5, y1 - 0.5])
-      redact.applyRedaction(0, mupdf.PDFPage.REDACT_IMAGE_NONE, mupdf.PDFPage.REDACT_LINE_ART_NONE, mupdf.PDFPage.REDACT_TEXT_REMOVE)
-      const value = text.replace(/[\r\n]+/g, ' ')
-      if (value.trim()) this.appendText(doc, page, value, line)
+      const analysis = analyzeLine(page, line)
+      removeLine(page, line.bbox)
+      writeLine(entry.doc, page, analysis, text, options.fonts ?? [], options.size)
       page.update()
     })
     entry.redacted = true
     return rest
-  }
-
-  private appendText(doc: mupdf.PDFDocument, page: mupdf.PDFPage, text: string, line: TextLine): void {
-    const pageObj = page.getObject()
-    let resources = pageObj.getInheritable('Resources')
-    if (!resources.isDictionary()) {
-      resources = doc.newDictionary()
-      pageObj.put('Resources', resources)
-    }
-    let fonts = child(resources, 'Font')
-    if (!fonts.isDictionary()) {
-      fonts = doc.newDictionary()
-      resources.put('Font', fonts)
-    }
-    let n = 1
-    while (!child(fonts, `KsF${n}`).isNull()) n++
-    const fontName = `KsF${n}`
-    fonts.put(fontName, doc.addSimpleFont(new mupdf.Font(standardFontFor(line.font)), 'Latin'))
-
-    const ctm = page.getTransform()
-    const inverse = mupdf.Matrix.invert(ctm)
-    const linear = mupdf.Matrix.invert([ctm[0], ctm[1], ctm[2], ctm[3], 0, 0])
-    const tm = mupdf.Matrix.concat([1, 0, 0, -1, 0, 0], linear)
-    const [ox, oy] = line.origin
-    const px = ox * inverse[0] + oy * inverse[2] + inverse[4]
-    const py = ox * inverse[1] + oy * inverse[3] + inverse[5]
-    const [r, g, b] = line.color
-    const num = (v: number): string => (Math.abs(v) < 1e-6 ? '0' : v.toFixed(4).replace(/\.?0+$/, ''))
-    const head =
-      `q BT /${fontName} ${num(line.size)} Tf ${num(r)} ${num(g)} ${num(b)} rg ` +
-      `${num(tm[0])} ${num(tm[1])} ${num(tm[2])} ${num(tm[3])} ${num(px)} ${num(py)} Tm (`
-    const tail = ') Tj ET Q\n'
-    const body = encodeWinAnsi(text)
-    const bytes = new Uint8Array(head.length + body.length + tail.length)
-    for (let i = 0; i < head.length; i++) bytes[i] = head.charCodeAt(i)
-    bytes.set(body, head.length)
-    for (let i = 0; i < tail.length; i++) bytes[head.length + body.length + i] = tail.charCodeAt(i)
-
-    const before = doc.addStream('q\n', {})
-    const after = doc.addStream('Q\n', {})
-    const added = doc.addStream(bytes, {})
-    const contents = pageObj.get('Contents')
-    const list = doc.newArray()
-    list.push(before)
-    if (contents.isArray()) for (let i = 0; i < contents.length; i++) list.push(contents.get(i))
-    else if (!contents.isNull()) list.push(contents)
-    list.push(after)
-    list.push(added)
-    pageObj.put('Contents', list)
   }
 
   rotatePages(docId: string, pages: number[], delta: number): MutationResult {

@@ -10,6 +10,7 @@ import { DraftShape, QuadShapes, SearchHits } from './Drafts'
 import { FieldLayer } from './FieldLayer'
 import { FreeTextEditor } from './FreeTextEditor'
 import { LineEditor } from './LineEditor'
+import { LineHover } from './LineHover'
 import { Ghost, SelectionChrome, type GhostState } from './SelectionChrome'
 import { TextSelectionBar } from './TextSelectionBar'
 import { usePagePointer } from './usePagePointer'
@@ -128,6 +129,7 @@ export const PageOverlay = memo(function PageOverlay({ index, scale, dpr, width,
         <FreeTextEditor key={editing.kind === 'freetext-edit' ? editing.id : `${editing.point.join()}`} editing={editing} scale={scale} />
       )}
       {editing?.kind === 'line-edit' && <LineEditor key={editing.line.bbox.join()} page={index} line={editing.line} scale={scale} />}
+      {tool === 'text' && !editing && pointer.hoverLine && <LineHover line={pointer.hoverLine} scale={scale} />}
       {commentTarget && <CommentPopover key={commentTarget.id} annot={commentTarget} scale={scale} pageWidth={size.width} />}
       {textSel && textSel.text.trim() && !pointer.drag && !pointer.selecting && tool === 'select' && <TextSelectionBar sel={textSel} scale={scale} />}
       {tool === 'sign' && pointer.hover && <SignPreviewImage point={pointer.hover} scale={scale} pageWidth={size.width} />}

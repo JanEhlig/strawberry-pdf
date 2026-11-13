@@ -48,6 +48,7 @@ export interface Inspection {
   annots: { page: number; type: string; contents: string; role: string | null; rect: number[] }[]
   fields: { page: number; name: string; value: string }[]
   text: string[]
+  lines: { page: number; text: string; font: string; size: number }[]
   rotation: number[]
 }
 

@@ -200,10 +200,25 @@ function makeBroken(sampleBytes) {
   return Buffer.from(broken, 'latin1')
 }
 
+function makeFonts() {
+  const doc = new mupdf.PDFDocument()
+  const font = new mupdf.Font('Times-Roman')
+  const ref = doc.addFont(font)
+  const show = (text) => `<${[...text].map((c) => font.encodeCharacter(c).toString(16).padStart(4, '0')).join('')}>`
+  const content = [
+    'BT 0.1 0.2 0.5 rg /F1 1 Tf 18 0 0 18 72 720 Tm', show('Rechnung Nr. 4711'), 'Tj ET',
+    'BT 0 g /F1 1 Tf 11 0 0 11 72 690 Tm', show('Zahlbar bis 30. November'), 'Tj ET'
+  ].join(' ')
+  doc.insertPage(-1, doc.addPage([0, 0, 595, 842], 0, doc.addObject({ Font: { F1: ref } }), content))
+  doc.subsetFonts()
+  return doc.saveToBuffer('garbage,compress').asUint8Array().slice()
+}
+
 const sample = await makeSample()
 writeFileSync(join(outDir, 'sample.pdf'), sample)
 writeFileSync(join(outDir, 'form.pdf'), await makeForm())
 writeFileSync(join(outDir, 'protected.pdf'), makeProtected(sample))
 writeFileSync(join(outDir, 'scan.pdf'), await makeScan(sample))
 writeFileSync(join(outDir, 'broken.pdf'), makeBroken(sample))
+writeFileSync(join(outDir, 'fonts.pdf'), makeFonts())
 console.log('Fixtures geschrieben nach', outDir)

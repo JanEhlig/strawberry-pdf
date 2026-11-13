@@ -1,4 +1,4 @@
-import type { AppEnvironment, StrawberryApi, PrintJob, RecentFile, StoreKey, WriteFileError } from '@shared/api'
+import type { AppEnvironment, FontQuery, StrawberryApi, PrintJob, RecentFile, StoreKey, SystemFont, WriteFileError } from '@shared/api'
 
 export interface OpenedFile {
   name: string
@@ -175,6 +175,13 @@ export const platform = {
   print(job: PrintJob): Promise<boolean> {
     if (api) return api.print(job)
     return Promise.resolve(false)
+  },
+  async matchFonts(query: FontQuery): Promise<SystemFont[]> {
+    return api ? api.matchFonts(query) : []
+  },
+  async readFont(file: string): Promise<Uint8Array> {
+    if (!api) throw new Error('Not available')
+    return toOwned(await api.readFont(file))
   },
   baseName
 }

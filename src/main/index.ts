@@ -3,9 +3,11 @@ import { existsSync, statSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { userInfo } from 'node:os'
 import { join, resolve } from 'node:path'
-import type { AppEnvironment, PrintJob, StoreKey } from '@shared/api'
+import type { AppEnvironment, FontQuery, PrintJob, StoreKey } from '@shared/api'
 import { APP_ORIGIN, handleAppScheme, registerAppSchemeAsPrivileged } from './protocol'
 import { addRecent, getRecent, loadStore, removeRecent, saveStore, writeFileAtomic } from './storage'
+import { installedFonts } from './fontIndex'
+import { matchFonts } from './fontMatch'
 import { printPages } from './print'
 
 const isDev = !app.isPackaged && !!process.env['ELECTRON_RENDERER_URL']
@@ -189,6 +191,23 @@ function registerIpc(): void {
   ipcMain.handle('print:pages', (event, job: PrintJob) =>
     printPages(BrowserWindow.fromWebContents(event.sender), job)
   )
+
+  ipcMain.handle('fonts:match', async (_event, query: FontQuery) => {
+    const safe: FontQuery = {
+      name: String(query?.name ?? ''),
+      bold: !!query?.bold,
+      italic: !!query?.italic,
+      serif: !!query?.serif,
+      mono: !!query?.mono,
+      text: String(query?.text ?? '')
+    }
+    return matchFonts(await installedFonts(), safe)
+  })
+  ipcMain.handle('fonts:read', async (_event, file: string) => {
+    if (!(await installedFonts()).some((font) => font.file === file)) throw new Error('Unknown font')
+    const data = await readFile(file)
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+  })
 }
 
 const gotLock = app.requestSingleInstanceLock()

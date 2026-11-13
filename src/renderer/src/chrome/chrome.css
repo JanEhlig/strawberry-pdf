@@ -264,16 +264,6 @@
 .width-btn[aria-pressed='true'] span {
   background: var(--accent);
 }
-.stepper {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-.stepper-value {
-  min-width: 46px;
-  text-align: center;
-  font-weight: 600;
-}
 
 .sign-list {
   display: flex;

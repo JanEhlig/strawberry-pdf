@@ -79,6 +79,7 @@ export const fr: Record<MessageKey, string> = {
   'markup.underline': 'Souligner',
   'markup.strikeout': 'Barrer',
   'text.edit': 'Modifier le texte existant',
+  'lineEdit.substitute': 'Absent de la police d’origine : {chars}',
   'shape.square': 'Rectangle',
   'shape.circle': 'Ellipse',
   'shape.line': 'Ligne',

@@ -1,45 +1,81 @@
+import { TriangleAlert } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { standardFontFor } from '@renderer/engine/fonts'
-import type { TextLine } from '@renderer/engine/types'
+import { displayFontName } from '@shared/fontNames'
+import type { TextEditPlan, TextLine } from '@renderer/engine/types'
 import { t } from '@renderer/i18n'
 import { toast } from '@renderer/state/appStore'
+import { editorFont, type EditorFont } from '@renderer/state/fonts'
 import { rgbToCss } from '@renderer/tools/tools'
+import { FontSize } from '@renderer/ui'
 import { useDocStore } from '../context'
 
-function cssFontFor(name: string): { family: string; weight: number; style: string } {
-  const base = standardFontFor(name)
-  const family = base.startsWith('Times')
-    ? '"Times New Roman", Times, serif'
-    : base.startsWith('Courier')
-      ? '"Courier New", Courier, monospace'
-      : 'Helvetica, Arial, sans-serif'
-  return { family, weight: /Bold/.test(base) ? 700 : 400, style: /Italic|Oblique/.test(base) ? 'italic' : 'normal' }
-}
+const PLAN_DELAY = 150
+const BAR_SPACE = 46
 
 export function LineEditor({ page, line, scale }: { page: number; line: TextLine; scale: number }): React.JSX.Element {
   const store = useDocStore()
   const [value, setValue] = useState(line.text)
+  const [size, setSize] = useState(line.size)
+  const [plan, setPlan] = useState<TextEditPlan | null>(null)
+  const [font, setFont] = useState<EditorFont | null>(null)
+  const [missing, setMissing] = useState('')
   const ref = useRef<HTMLInputElement>(null)
   const done = useRef(false)
-  const font = cssFontFor(line.font)
+  const edited = useRef(false)
+  const latest = useRef({ value, size, plan })
+  latest.current = { value, size, plan }
 
   useLayoutEffect(() => {
     ref.current?.focus()
     ref.current?.select()
   }, [])
 
-  const latestValue = useRef(value)
-  latestValue.current = value
+  useEffect(() => {
+    let alive = true
+    store
+      .getState()
+      .planTextEdit(page, line)
+      .then((result) => {
+        if (!alive) return
+        setPlan(result)
+        setSize(result.size)
+        if (!edited.current) {
+          setValue(result.text)
+          requestAnimationFrame(() => ref.current?.select())
+        }
+      })
+      .catch(() => undefined)
+    editorFont(line.font)
+      .then((result) => alive && setFont(result))
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [store, page, line])
+
+  useEffect(() => {
+    if (!edited.current) return
+    const timer = setTimeout(() => {
+      store
+        .getState()
+        .planTextEdit(page, line, value)
+        .then((result) => setMissing(result.missing))
+        .catch(() => undefined)
+    }, PLAN_DELAY)
+    return () => clearTimeout(timer)
+  }, [store, page, line, value])
 
   const commit = async (cancel: boolean): Promise<void> => {
     if (done.current) return
     done.current = true
     const s = store.getState()
     if (s.editing?.kind === 'line-edit') s.setEditing(null)
-    const text = latestValue.current
-    if (cancel || text === line.text) return
+    const current = latest.current
+    const original = current.plan?.text ?? line.text
+    const resized = Math.abs(current.size - (current.plan?.size ?? line.size)) > 0.01
+    if (cancel || (current.value === original && !resized)) return
     try {
-      await s.replaceTextLine(page, line, text)
+      await s.replaceTextLine(page, line, current.value, resized ? current.size : undefined)
     } catch (error) {
       toast(t('error.generic', { message: error instanceof Error ? error.message : String(error) }), 'error')
     }
@@ -48,38 +84,67 @@ export function LineEditor({ page, line, scale }: { page: number; line: TextLine
   useEffect(() => () => void commit(false), [])
 
   const [x0, y0, x1, y1] = line.bbox
+  const ratio = size / (line.size || size || 1)
+  const height = (y1 - y0) * ratio * scale
+  const barTop = y0 * scale >= BAR_SPACE ? y0 * scale - BAR_SPACE : y0 * scale + height + 10
+  const substitute = missing.length > 0 && !font?.installed
   return (
-    <input
-      ref={ref}
-      className="line-editor"
-      value={value}
-      spellCheck={false}
-      aria-label={t('text.edit')}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={() => void commit(false)}
-      onPointerDown={(e) => e.stopPropagation()}
-      onKeyDown={(e) => {
-        e.stopPropagation()
-        if (e.key === 'Enter') {
+    <>
+      <div
+        className="line-editor-bar"
+        style={{ left: x0 * scale, top: barTop }}
+        role="toolbar"
+        aria-label={t('text.edit')}
+        onPointerDown={(e) => {
           e.preventDefault()
-          void commit(false)
-        } else if (e.key === 'Escape') {
-          e.preventDefault()
-          void commit(true)
-        }
-      }}
-      style={{
-        left: x0 * scale - 3,
-        top: y0 * scale - 2,
-        minWidth: (x1 - x0) * scale + 24,
-        width: `${Math.max(value.length, 4) * 0.62 * line.size * scale + 24}px`,
-        height: (y1 - y0) * scale + 4,
-        fontFamily: font.family,
-        fontWeight: font.weight,
-        fontStyle: font.style,
-        fontSize: line.size * scale,
-        color: rgbToCss(line.color)
-      }}
-    />
+          e.stopPropagation()
+        }}
+      >
+        <span className="line-editor-font" data-tip={font?.label ?? displayFontName(line.font.name)}>
+          {font?.label ?? displayFontName(line.font.name)}
+        </span>
+        {substitute && (
+          <span className="line-editor-substitute" data-tip={t('lineEdit.substitute', { chars: missing })}>
+            <TriangleAlert size={15} aria-label={t('lineEdit.substitute', { chars: missing })} />
+          </span>
+        )}
+        <span className="selection-bar-sep" />
+        <FontSize value={size} onChange={setSize} />
+      </div>
+      <input
+        ref={ref}
+        className="line-editor"
+        value={value}
+        spellCheck={false}
+        aria-label={t('text.edit')}
+        onChange={(e) => {
+          edited.current = true
+          setValue(e.target.value)
+        }}
+        onBlur={() => void commit(false)}
+        onPointerDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          e.stopPropagation()
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            void commit(false)
+          } else if (e.key === 'Escape') {
+            e.preventDefault()
+            void commit(true)
+          }
+        }}
+        style={{
+          left: x0 * scale - 3,
+          top: y0 * scale - 2,
+          minWidth: (x1 - x0) * scale + 24,
+          height: height + 4,
+          fontFamily: font?.family ?? (line.font.mono ? 'monospace' : line.font.serif ? 'serif' : 'sans-serif'),
+          fontWeight: font?.weight ?? (line.font.bold ? 700 : 400),
+          fontStyle: font?.style ?? (line.font.italic ? 'italic' : 'normal'),
+          fontSize: size * scale,
+          color: rgbToCss(line.color)
+        }}
+      />
+    </>
   )
 }

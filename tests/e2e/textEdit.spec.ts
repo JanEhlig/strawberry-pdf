@@ -1,0 +1,66 @@
+import { expect, test } from '@playwright/test'
+import { closeAll, inspect, launch, pagePoint, saveWithShortcut, waitForPage, workingCopy } from './helpers'
+
+test.afterEach(closeAll)
+
+test('Text-Werkzeug: Zeile überfahren, „Text ändern“ klicken, in der Originalschrift neu schreiben', async () => {
+  const file = workingCopy('fonts.pdf')
+  const { win } = await launch([file])
+  await waitForPage(win, 0)
+  await win.keyboard.press('t')
+  const line = await pagePoint(win, 0, 130, 114)
+  await win.mouse.move(line.x, line.y)
+  await win.mouse.move(line.x + 4, line.y)
+  await expect(win.locator('.line-hover-tag')).toHaveText('Text ändern')
+
+  await win.mouse.click(line.x, line.y)
+  const input = win.locator('input.line-editor')
+  await expect(input).toHaveValue('Rechnung Nr. 4711')
+  await expect(win.locator('.line-editor-font')).toHaveText('Times')
+  await input.fill('Rechnung Nr. 1174')
+  await input.press('Enter')
+  await expect(input).toHaveCount(0)
+
+  await saveWithShortcut(win)
+  const edited = inspect(file).lines.find((l) => l.text === 'Rechnung Nr. 1174')
+  expect(edited?.font).toMatch(/^[A-Z]{6}\+Times-Roman$/)
+  expect(edited?.size).toBeCloseTo(18, 1)
+})
+
+test('Größe im Zeileneditor ändern und Sonderzeichen ergänzen', async () => {
+  const file = workingCopy('fonts.pdf')
+  const { win } = await launch([file])
+  await waitForPage(win, 0)
+  await win.keyboard.press('t')
+  const line = await pagePoint(win, 0, 120, 148)
+  await win.mouse.move(line.x, line.y)
+  await win.mouse.click(line.x, line.y)
+  const input = win.locator('input.line-editor')
+  await expect(input).toHaveValue('Zahlbar bis 30. November')
+  await win.locator('.line-editor-bar').getByRole('button', { name: 'Größer' }).click()
+  await expect(input).toBeFocused()
+  await input.press('End')
+  await input.pressSequentially(' – Łódź')
+  await input.press('Enter')
+  await expect(input).toHaveCount(0)
+
+  await saveWithShortcut(win)
+  const edited = inspect(file).lines.find((l) => l.text.startsWith('Zahlbar'))
+  expect(edited?.text).toBe('Zahlbar bis 30. November – Łódź')
+  expect(edited?.size).toBeCloseTo(12, 1)
+  expect(edited?.font).toMatch(/Times-Roman$/)
+})
+
+test('Alt-Klick im Text-Werkzeug setzt neuen Text statt die Zeile zu ändern', async () => {
+  const { win } = await launch([workingCopy('fonts.pdf')])
+  await waitForPage(win, 0)
+  await win.keyboard.press('t')
+  const line = await pagePoint(win, 0, 130, 114)
+  await win.keyboard.down('Alt')
+  await win.mouse.move(line.x, line.y)
+  await expect(win.locator('.line-hover')).toHaveCount(0)
+  await win.mouse.click(line.x, line.y)
+  await win.keyboard.up('Alt')
+  await expect(win.locator('.freetext-editor')).toBeVisible()
+  await expect(win.locator('input.line-editor')).toHaveCount(0)
+})

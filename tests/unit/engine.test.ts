@@ -541,11 +541,13 @@ describe('Text ändern', () => {
     expect(Math.abs(replaced!.origin[1] - line.origin[1])).toBeLessThan(1)
   })
 
-  it('wählt passende Standardschriften', async () => {
-    const { standardFontFor } = await import('@renderer/engine/fonts')
-    expect(standardFontFor('ABCDEF+Calibri-Bold')).toBe('Helvetica-Bold')
-    expect(standardFontFor('TimesNewRomanPS-ItalicMT')).toBe('Times-Italic')
-    expect(standardFontFor('CourierNewPSMT')).toBe('Courier')
+  it('wählt passende Ersatzschriften', async () => {
+    const { builtinFontFor } = await import('@renderer/engine/fonts')
+    const plain = { bold: false, italic: false, serif: false, mono: false }
+    expect(builtinFontFor({ ...plain, name: 'ABCDEF+Calibri-Bold' })).toBe('Helvetica-Bold')
+    expect(builtinFontFor({ ...plain, name: 'TimesNewRomanPS-ItalicMT' })).toBe('Times-Italic')
+    expect(builtinFontFor({ ...plain, name: 'CourierNewPSMT' })).toBe('Courier')
+    expect(builtinFontFor({ ...plain, name: 'Frutiger', serif: true, bold: true })).toBe('Times-Bold')
   })
 })
 

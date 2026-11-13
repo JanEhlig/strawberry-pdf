@@ -77,6 +77,7 @@ export const de = {
   'markup.underline': 'Unterstreichen',
   'markup.strikeout': 'Durchstreichen',
   'text.edit': 'Vorhandenen Text ändern',
+  'lineEdit.substitute': 'Fehlt in der Originalschrift: {chars}',
   'shape.square': 'Rechteck',
   'shape.circle': 'Ellipse',
   'shape.line': 'Linie',

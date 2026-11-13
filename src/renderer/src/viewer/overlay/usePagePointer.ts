@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { engine } from '@renderer/engine/client'
 import { rectFromPoints, rectToQuad, simplifyPath } from '@renderer/engine/geometry'
-import type { AnnotData, LinkData, Point, Quad, Rect, SelectMode } from '@renderer/engine/types'
+import type { AnnotData, LinkData, Point, Quad, Rect, SelectMode, TextLine } from '@renderer/engine/types'
 import { authorName, setTool, useApp } from '@renderer/state/appStore'
 import type { DocStore } from '@renderer/state/docStore'
 import { useViewer } from '../context'
@@ -77,6 +77,9 @@ export function usePagePointer({ store, index, scale, pageSize, beginGhost, endG
   const [drag, setDrag] = useState<DragState | null>(null)
   const [cursor, setCursor] = useState('default')
   const [hover, setHover] = useState<Point | null>(null)
+  const [hoverLine, setHoverLine] = useState<TextLine | null>(null)
+  const lastPointer = useRef<{ point: Point; alt: boolean } | null>(null)
+  const refreshCursor = useRef<(p: Point, alt: boolean) => void>(() => undefined)
   const [selecting, setSelecting] = useState(false)
   const selectionRequest = useRef<{ inflight: boolean; pending: { g: TextGesture; focus: Point } | null }>({ inflight: false, pending: null })
   const queue = useRef<Promise<void>>(Promise.resolve())
@@ -129,12 +132,19 @@ export function usePagePointer({ store, index, scale, pageSize, beginGhost, endG
   )
 
   const updateCursor = useCallback(
-    (p: Point) => {
+    (p: Point, alt = false) => {
       const { tool } = useApp.getState()
       const s = store.getState()
       const data = s.pageData[index]
-      if (data && !data.lines && tool !== 'draw' && tool !== 'shapes') void s.ensureLines(index)
+      if (data && !data.lines && tool !== 'draw' && tool !== 'shapes') {
+        void s.ensureLines(index).then(() => {
+          const last = lastPointer.current
+          if (last) refreshCursor.current(last.point, last.alt)
+        })
+      }
       const overText = !!hitTextLine(data?.lines ?? null, p, 1)
+      const editable = tool === 'text' && !alt && data && !hitAnnotation(data.annots, p, tolerance) ? hitTextLine(data.lines, p, 1) : null
+      setHoverLine(editable)
       if (tool === 'select') {
         const sel = s.selection?.page === index ? data?.annots.find((a) => a.id === s.selection?.id) : undefined
         if (sel) {
@@ -157,6 +167,8 @@ export function usePagePointer({ store, index, scale, pageSize, beginGhost, endG
     },
     [store, index, scale, tolerance]
   )
+
+  refreshCursor.current = updateCursor
 
   const enqueue = useCallback((step: () => Promise<void>) => {
     queue.current = queue.current.then(step).catch((error) => console.warn('Aktion fehlgeschlagen', error))
@@ -221,6 +233,13 @@ export function usePagePointer({ store, index, scale, pageSize, beginGhost, endG
       const existing = data ? hitAnnotation(data.annots, p, tolerance) : null
       if (existing?.kind === 'freetext' && !existing.locked) {
         s.setEditing({ kind: 'freetext-edit', page: index, id: existing.id })
+        return
+      }
+      const line = !e.altKey && !existing ? hitTextLine(lines, p, 1) : null
+      if (line) {
+        setHoverLine(null)
+        s.setTextSel(null)
+        s.setEditing({ kind: 'line-edit', page: index, line })
         return
       }
     }
@@ -304,7 +323,8 @@ export function usePagePointer({ store, index, scale, pageSize, beginGhost, endG
       const p = toPoint(e)
       const g = gesture.current
       if (!g) {
-        updateCursor(p)
+        lastPointer.current = { point: p, alt: e.altKey }
+        updateCursor(p, e.altKey)
         if (useApp.getState().tool === 'sign') setHover(p)
         return
       }
@@ -478,10 +498,12 @@ export function usePagePointer({ store, index, scale, pageSize, beginGhost, endG
   const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => release(e, false), [release])
   const onPointerCancel = useCallback((e: React.PointerEvent<HTMLDivElement>) => release(e, true), [release])
   const onPointerLeave = useCallback(() => {
+    lastPointer.current = null
     setHover(null)
+    setHoverLine(null)
   }, [])
 
-  return { draft, drag, cursor, hover, selecting, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onPointerLeave }
+  return { draft, drag, cursor, hover, hoverLine, selecting, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onPointerLeave }
 }
 
 function draftEnd(start: Point, p: Point, shift: boolean, type: string): Point {

@@ -79,6 +79,7 @@ export const pl: Record<MessageKey, string> = {
   'markup.underline': 'Podkreśl',
   'markup.strikeout': 'Przekreśl',
   'text.edit': 'Zmień istniejący tekst',
+  'lineEdit.substitute': 'Brak w oryginalnej czcionce: {chars}',
   'shape.square': 'Prostokąt',
   'shape.circle': 'Elipsa',
   'shape.line': 'Linia',

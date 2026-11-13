@@ -13,8 +13,10 @@ import type {
   Quad,
   Rect,
   SearchHit,
+  TextEditPlan,
   TextLine
 } from '@renderer/engine/types'
+import { fontsFor } from './fonts'
 
 export interface PageData {
   version: number
@@ -100,7 +102,9 @@ export interface DocActions {
   setAnnotationHidden(page: number, id: string, hidden: boolean): Promise<void>
   setFieldValue(page: number, id: string, value: string | boolean): Promise<void>
   applyMutation(result: MutationResult): Promise<void>
-  replaceTextLine(page: number, line: TextLine, text: string): Promise<void>
+  planTextEdit(page: number, line: TextLine, text?: string): Promise<TextEditPlan>
+  replaceTextLine(page: number, line: TextLine, text: string, size?: number): Promise<void>
+  idle(): Promise<void>
   undo(): Promise<void>
   redo(): Promise<void>
   refreshRedactions(): Promise<void>
@@ -132,6 +136,7 @@ export function createDocStore(init: {
     let searchToken = 0
     const loading = new Map<number, Promise<PageData | null>>()
     const linesLoading = new Map<number, Promise<TextLine[]>>()
+    let pendingWork: Promise<void> = Promise.resolve()
 
     const bumpPages = (pages: number[]): void => {
       set((s) => {
@@ -336,8 +341,24 @@ export function createDocStore(init: {
         await get().refreshRedactions()
       },
 
-      async replaceTextLine(page, line, text) {
-        await get().applyMutation(await engine().call('replaceTextLine', get().docId, page, line, text))
+      planTextEdit(page, line, text) {
+        return engine().call('planTextEdit', get().docId, page, line, text)
+      },
+
+      replaceTextLine(page, line, text, size) {
+        const job = (async () => {
+          const { docId } = get()
+          const plan = await engine().call('planTextEdit', docId, page, line, text)
+          const fonts = await fontsFor(plan.font, plan.missing)
+          await get().applyMutation(await engine().call('replaceTextLine', docId, page, line, text, { fonts, size }))
+        })()
+        const previous = pendingWork
+        pendingWork = Promise.all([previous, job.catch(() => undefined)]).then(() => undefined)
+        return job
+      },
+
+      idle() {
+        return pendingWork
       },
 
       async undo() {

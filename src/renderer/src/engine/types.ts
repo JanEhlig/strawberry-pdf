@@ -191,13 +191,39 @@ export interface SearchHit {
   quads: Quad[]
 }
 
+export interface TextFont {
+  name: string
+  bold: boolean
+  italic: boolean
+  serif: boolean
+  mono: boolean
+}
+
 export interface TextLine {
   bbox: Rect
   size: number
-  font: string
+  font: TextFont
   text: string
   origin: Point
   color: RGB
+}
+
+export interface TextEditPlan {
+  text: string
+  font: TextFont
+  size: number
+  missing: string
+}
+
+export interface FontProgram {
+  name: string
+  data: Uint8Array
+  index: number
+}
+
+export interface TextEditOptions {
+  fonts?: FontProgram[]
+  size?: number
 }
 
 export type RedactFill = 'black' | 'white'

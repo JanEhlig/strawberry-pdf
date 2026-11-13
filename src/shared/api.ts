@@ -39,6 +39,25 @@ export interface WriteFileError {
   message: string
 }
 
+export interface FontQuery {
+  name: string
+  bold: boolean
+  italic: boolean
+  serif: boolean
+  mono: boolean
+  text: string
+}
+
+export interface SystemFont {
+  file: string
+  index: number
+  family: string
+  postscript: string
+  weight: number
+  italic: boolean
+  exact: boolean
+}
+
 export interface PrintJob {
   pages: Uint8Array[]
   sizes: { width: number; height: number }[]
@@ -68,4 +87,6 @@ export interface StrawberryApi {
   setTitleBarColors(colors: { color: string; symbolColor: string }): void
   setWindowTitle(title: string): void
   print(job: PrintJob): Promise<boolean>
+  matchFonts(query: FontQuery): Promise<SystemFont[]>
+  readFont(file: string): Promise<Uint8Array>
 }

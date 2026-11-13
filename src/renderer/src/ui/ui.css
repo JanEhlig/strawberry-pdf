@@ -377,3 +377,14 @@
   text-align: center;
   color: var(--ink);
 }
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.stepper-value {
+  min-width: 46px;
+  text-align: center;
+  font-weight: 600;
+}

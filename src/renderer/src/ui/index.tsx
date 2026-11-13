@@ -8,10 +8,11 @@ import {
   type ReactNode,
   type RefObject
 } from 'react'
+import { Minus, Plus } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { dismissToast, openDialog, useApp } from '@renderer/state/appStore'
 import type { RGB } from '@renderer/engine/types'
-import { rgbToCss, sameColor, type NamedColor } from '@renderer/tools/tools'
+import { FONT_SIZES, rgbToCss, sameColor, type NamedColor } from '@renderer/tools/tools'
 import { t } from '@renderer/i18n'
 import './ui.css'
 
@@ -391,6 +392,23 @@ export function Toasts(): React.JSX.Element {
           )}
         </div>
       ))}
+    </div>
+  )
+}
+
+export function FontSize({ value, onChange }: { value: number; onChange: (size: number) => void }): React.JSX.Element {
+  const index = FONT_SIZES.findIndex((s) => s >= value - 0.01)
+  const smaller = FONT_SIZES[Math.max(0, (index === -1 ? FONT_SIZES.length : index) - 1)]
+  const larger = FONT_SIZES[Math.min(FONT_SIZES.length - 1, index === -1 ? FONT_SIZES.length - 1 : FONT_SIZES[index] > value + 0.01 ? index : index + 1)]
+  return (
+    <div className="stepper" role="group" aria-label={t('option.size')}>
+      <IconButton small label={t('option.smaller')} onClick={() => onChange(smaller)}>
+        <Minus size={15} />
+      </IconButton>
+      <span className="stepper-value tabular">{Math.round(value)} pt</span>
+      <IconButton small label={t('option.larger')} onClick={() => onChange(larger)}>
+        <Plus size={15} />
+      </IconButton>
     </div>
   )
 }

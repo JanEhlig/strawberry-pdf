@@ -79,6 +79,7 @@ export const nl: Record<MessageKey, string> = {
   'markup.underline': 'Onderstrepen',
   'markup.strikeout': 'Doorhalen',
   'text.edit': 'Bestaande tekst wijzigen',
+  'lineEdit.substitute': 'Niet in het oorspronkelijke lettertype: {chars}',
   'shape.square': 'Rechthoek',
   'shape.circle': 'Ellips',
   'shape.line': 'Lijn',

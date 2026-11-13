@@ -6,7 +6,6 @@ import {
   Highlighter,
   ImageUp,
   MessageSquare,
-  Minus,
   Plus,
   Slash,
   Square,
@@ -27,14 +26,13 @@ import { freeTextRect } from '@renderer/viewer/placement'
 import {
   FILL_COLORS,
   FONTS,
-  FONT_SIZES,
   INK_COLORS,
   MARKER_COLORS,
   STROKE_WIDTHS,
   type MarkupType,
   type ShapeType
 } from '@renderer/tools/tools'
-import { Button, IconButton, Segmented, Swatches } from '@renderer/ui'
+import { Button, FontSize, IconButton, Segmented, Swatches } from '@renderer/ui'
 
 function Widths({ value, onChange }: { value: number; onChange: (w: number) => void }): React.JSX.Element {
   return (
@@ -52,23 +50,6 @@ function Widths({ value, onChange }: { value: number; onChange: (w: number) => v
           <span style={{ width: 4 + w * 1.6, height: 4 + w * 1.6 }} />
         </button>
       ))}
-    </div>
-  )
-}
-
-function FontSize({ value, onChange }: { value: number; onChange: (size: number) => void }): React.JSX.Element {
-  const index = FONT_SIZES.findIndex((s) => s >= value - 0.01)
-  const smaller = FONT_SIZES[Math.max(0, (index === -1 ? FONT_SIZES.length : index) - 1)]
-  const larger = FONT_SIZES[Math.min(FONT_SIZES.length - 1, index === -1 ? FONT_SIZES.length - 1 : FONT_SIZES[index] > value + 0.01 ? index : index + 1)]
-  return (
-    <div className="stepper" role="group" aria-label={t('option.size')}>
-      <IconButton small label={t('option.smaller')} onClick={() => onChange(smaller)}>
-        <Minus size={15} />
-      </IconButton>
-      <span className="stepper-value tabular">{Math.round(value)} pt</span>
-      <IconButton small label={t('option.larger')} onClick={() => onChange(larger)}>
-        <Plus size={15} />
-      </IconButton>
     </div>
   )
 }
