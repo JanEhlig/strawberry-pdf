@@ -30,6 +30,7 @@ const api: StrawberryApi = {
   openDefaultAppsSettings: () => ipcRenderer.send('shell:default-apps'),
   setTitleBarColors: (colors) => ipcRenderer.send('window:title-bar', colors),
   setWindowTitle: (title: string) => ipcRenderer.send('window:title', title),
+  getPrinters: () => ipcRenderer.invoke('print:printers'),
   print: (job: PrintJob) => ipcRenderer.invoke('print:pages', job),
   matchFonts: (query: FontQuery) => ipcRenderer.invoke('fonts:match', query),
   readFont: (file: string) => ipcRenderer.invoke('fonts:read', file)

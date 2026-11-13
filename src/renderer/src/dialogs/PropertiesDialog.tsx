@@ -1,3 +1,4 @@
+import { PAPER_SIZES } from '@shared/paper'
 import { locale, t, type MessageKey } from '@renderer/i18n'
 import { openDialog, type TabEntry } from '@renderer/state/appStore'
 import { Button, Dialog } from '@renderer/ui'
@@ -15,19 +16,11 @@ export function parsePdfDate(value: string): Date | null {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-const PAPER: [string, number, number][] = [
-  ['A4', 595, 842],
-  ['A3', 842, 1191],
-  ['A5', 420, 595],
-  ['Letter', 612, 792],
-  ['Legal', 612, 1008]
-]
-
 export function describePageSize(width: number, height: number): string {
   const mm = (pt: number): number => Math.round((pt / 72) * 25.4)
   const lo = Math.min(width, height)
   const hi = Math.max(width, height)
-  const name = PAPER.find(([, w, h]) => Math.abs(w - lo) < 3 && Math.abs(h - hi) < 3)?.[0]
+  const name = Object.entries(PAPER_SIZES).find(([, size]) => Math.abs(size.width - lo) < 3 && Math.abs(size.height - hi) < 3)?.[0]
   return `${mm(width)} × ${mm(height)} mm${name ? ` (${name})` : ''}`
 }
 

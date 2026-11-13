@@ -1,4 +1,15 @@
-import type { AppEnvironment, FontQuery, StrawberryApi, PrintJob, RecentFile, SaveKind, StoreKey, SystemFont, WriteFileError } from '@shared/api'
+import type {
+  AppEnvironment,
+  FontQuery,
+  PrinterSummary,
+  PrintJob,
+  RecentFile,
+  SaveKind,
+  StoreKey,
+  StrawberryApi,
+  SystemFont,
+  WriteFileError
+} from '@shared/api'
 
 export interface OpenedFile {
   name: string
@@ -185,6 +196,9 @@ export const platform = {
   setWindowTitle(title: string): void {
     if (api) api.setWindowTitle(title)
     document.title = title
+  },
+  async getPrinters(): Promise<PrinterSummary[]> {
+    return api ? api.getPrinters() : []
   },
   print(job: PrintJob): Promise<boolean> {
     if (api) return api.print(job)

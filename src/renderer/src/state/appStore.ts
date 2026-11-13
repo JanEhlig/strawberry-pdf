@@ -28,7 +28,8 @@ export const DEFAULT_SETTINGS: Settings = {
   authorName: '',
   theme: 'system',
   language: 'auto',
-  highlightFields: true
+  highlightFields: true,
+  print: { printer: '', paper: 'printer', scaling: 'fit', orientation: 'auto', duplex: 'printer', gray: false, markups: true }
 }
 
 export interface AppState {

@@ -20,6 +20,7 @@ A free PDF reader and editor for Windows, for everything you need day to day. No
 | **Combine PDFs** | Choose **Combine PDFs** on the start screen or in the ⋯ menu, or drop a PDF into the page overview. Form fields, notes and links are preserved. |
 | **Save** | Ctrl+S saves. "Save as" and "Copy with embedded annotations" are in the ⋯ menu. |
 | **Export to Word and Excel** | Choose **Export to Word** or **Export to Excel** in the ⋯ menu. Word files keep paragraphs, fonts, colors, tables and images. Excel files get one sheet per page, with tables in rows and columns and amounts, percentages and dates as real numbers. Form field values and annotations are included, and scanned pages with recognized text are exported as text. |
+| **Print** | Ctrl+P opens the print dialog with a preview. Choose the printer, copies, pages (all, the current page or a range such as 1-3, 5), paper, size, orientation and two-sided printing, print in grayscale and decide whether annotations are printed. Landscape pages are turned to fit the paper automatically, and the settings are remembered. The Windows print dialog is still one click away. |
 | **Undo** | Ctrl+Z and Ctrl+Y, even after saving. |
 
 Press **F1** for all keyboard shortcuts.

@@ -1,49 +1,41 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, type WebContents } from 'electron'
+import { execFile } from 'node:child_process'
 import { rmSync } from 'node:fs'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import type { PrintJob } from '@shared/api'
+import type { PrinterSummary, PrintJob } from '@shared/api'
+import { parseDefaultPrinter, printHtml, printOptions, sanitizePrintSettings } from './printJob'
 
 const pending = new Set<string>()
 app.on('will-quit', () => {
   for (const dir of pending) rmSync(dir, { recursive: true, force: true })
 })
 
-function escapeHtml(text: string): string {
-  return text.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string)
+const DEVICE_KEY = 'HKCU\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Windows'
+
+function defaultPrinter(): Promise<string | null> {
+  if (process.platform !== 'win32') return Promise.resolve(null)
+  return new Promise((resolve) => {
+    execFile('reg', ['query', DEVICE_KEY, '/v', 'Device'], { windowsHide: true, timeout: 5000 }, (error, stdout) =>
+      resolve(error ? null : parseDefaultPrinter(stdout))
+    )
+  })
 }
 
-function printHtml(names: string[], sizes: { width: number; height: number }[], title: string): string {
-  const fallback = sizes[0] ?? { width: 595, height: 842 }
-  const keys = new Map<string, number>()
-  const rules: string[] = []
-  const pages = names.map((name, i) => {
-    const { width, height } = sizes[i] ?? fallback
-    const key = `${Math.round(width)}x${Math.round(height)}`
-    let id = keys.get(key)
-    if (id === undefined) {
-      id = keys.size
-      keys.set(key, id)
-      rules.push(`@page s${id} { size: ${width}pt ${height}pt; margin: 0; }`)
-      rules.push(`.s${id} { page: s${id}; width: ${width}pt; height: ${height}pt; }`)
-    }
-    return `<div class="pg s${id}"><img src="${name}" alt=""></div>`
-  })
-  return `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
-<style>
-  @page { size: ${fallback.width}pt ${fallback.height}pt; margin: 0; }
-  ${rules.join('\n  ')}
-  html, body { margin: 0; padding: 0; background: #fff; }
-  .pg { display: flex; align-items: center; justify-content: center; overflow: hidden; break-after: page; }
-  .pg:last-child { break-after: auto; }
-  .pg img { max-width: 100%; max-height: 100%; }
-</style></head><body>${pages.join('\n')}</body></html>`
+export async function listPrinters(contents: WebContents): Promise<PrinterSummary[]> {
+  const [printers, standard] = await Promise.all([contents.getPrintersAsync(), defaultPrinter()])
+  return printers.map((printer) => ({
+    name: printer.name,
+    displayName: printer.displayName || printer.name,
+    isDefault: printer.name === standard
+  }))
 }
 
 export async function printPages(parent: BrowserWindow | null, job: PrintJob): Promise<boolean> {
   if (job.pages.length === 0) return false
+  const settings = sanitizePrintSettings(job.settings)
   const dir = await mkdtemp(join(tmpdir(), 'strawberry-print-'))
   pending.add(dir)
   let win: BrowserWindow | null = null
@@ -56,7 +48,7 @@ export async function printPages(parent: BrowserWindow | null, job: PrintJob): P
       })
     )
     const htmlPath = join(dir, 'druck.html')
-    await writeFile(htmlPath, printHtml(names, job.sizes, job.title), 'utf8')
+    await writeFile(htmlPath, printHtml(names, job.sizes, job.title, settings?.scaling ?? 'fit'), 'utf8')
     win = new BrowserWindow({
       show: false,
       parent: parent ?? undefined,
@@ -65,7 +57,7 @@ export async function printPages(parent: BrowserWindow | null, job: PrintJob): P
     await win.loadURL(pathToFileURL(htmlPath).toString())
     const printing = win
     return await new Promise<boolean>((resolve) => {
-      printing.webContents.print({ silent: false, printBackground: true }, (success) => resolve(success))
+      printing.webContents.print(printOptions(settings), (success) => resolve(success))
     })
   } finally {
     win?.destroy()

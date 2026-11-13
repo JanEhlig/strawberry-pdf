@@ -1,0 +1,96 @@
+.dialog.print-dialog {
+  width: min(960px, 100%);
+}
+
+.print-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
+  gap: 24px;
+  padding-bottom: 6px;
+}
+
+.print-settings {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 12px 16px;
+  align-items: center;
+  align-content: start;
+}
+
+.print-settings > .field-label {
+  white-space: nowrap;
+}
+
+.print-inline {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.print-copies {
+  width: 84px;
+}
+
+.print-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.print-pages .input {
+  width: 100%;
+}
+
+.print-error {
+  font-size: var(--text-xs);
+  color: var(--danger);
+}
+
+.print-checks {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  padding-top: 4px;
+}
+
+.print-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--desk);
+}
+
+.print-sheet {
+  width: 100%;
+  height: min(420px, calc(100vh - 300px));
+  min-height: 200px;
+  filter: drop-shadow(0 1px 2px rgba(28, 39, 51, 0.18)) drop-shadow(0 6px 16px rgba(28, 39, 51, 0.14));
+}
+
+.print-sheet-paper {
+  fill: #fff;
+}
+
+.print-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+@media (max-width: 760px) {
+  .print-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .print-preview {
+    order: -1;
+  }
+}

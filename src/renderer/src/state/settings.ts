@@ -35,6 +35,6 @@ export function applySettings(next: Settings, persist = true): void {
 
 export async function loadSettings(): Promise<void> {
   const stored = await platform.loadStore<Partial<Settings>>('settings')
-  applySettings({ ...DEFAULT_SETTINGS, ...(stored ?? {}) }, false)
+  applySettings({ ...DEFAULT_SETTINGS, ...stored, print: { ...DEFAULT_SETTINGS.print, ...stored?.print } }, false)
   darkQuery.addEventListener('change', () => applyTheme(useApp.getState().settings))
 }

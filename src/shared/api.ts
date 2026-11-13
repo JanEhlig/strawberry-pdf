@@ -8,11 +8,27 @@ export type ThemeSetting = 'system' | 'light' | 'dark'
 export type LanguageId = 'de' | 'en' | 'fr' | 'es' | 'it' | 'nl' | 'pl' | 'pt'
 export type LanguageSetting = 'auto' | LanguageId
 
+export type PaperSize = 'A4' | 'A3' | 'A5' | 'Letter' | 'Legal'
+export type PrintScaling = 'fit' | 'actual' | 'shrink'
+export type PrintOrientation = 'auto' | 'portrait' | 'landscape'
+export type DuplexMode = 'simplex' | 'longEdge' | 'shortEdge'
+
+export interface PrintPreferences {
+  printer: string
+  paper: PaperSize | 'printer'
+  scaling: PrintScaling
+  orientation: PrintOrientation
+  duplex: DuplexMode | 'printer'
+  gray: boolean
+  markups: boolean
+}
+
 export interface Settings {
   authorName: string
   theme: ThemeSetting
   language: LanguageSetting
   highlightFields: boolean
+  print: PrintPreferences
 }
 
 export interface SavedSignature {
@@ -60,10 +76,28 @@ export interface SystemFont {
   exact: boolean
 }
 
+export interface PrinterSummary {
+  name: string
+  displayName: string
+  isDefault: boolean
+}
+
+export interface PrintSettings {
+  printer: string
+  copies: number
+  collate: boolean
+  paper: PaperSize | 'printer'
+  landscape: boolean
+  duplex: DuplexMode | 'printer'
+  color: boolean
+  scaling: PrintScaling
+}
+
 export interface PrintJob {
   pages: Uint8Array[]
   sizes: { width: number; height: number }[]
   title: string
+  settings?: PrintSettings
 }
 
 export interface StrawberryApi {
@@ -89,6 +123,7 @@ export interface StrawberryApi {
   openDefaultAppsSettings(): void
   setTitleBarColors(colors: { color: string; symbolColor: string }): void
   setWindowTitle(title: string): void
+  getPrinters(): Promise<PrinterSummary[]>
   print(job: PrintJob): Promise<boolean>
   matchFonts(query: FontQuery): Promise<SystemFont[]>
   readFont(file: string): Promise<Uint8Array>

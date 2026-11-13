@@ -6,6 +6,7 @@ import { pageModel } from './export/model'
 import { writeXlsx } from './export/xlsx'
 import { analyzeLine, planLineEdit, removeLine, writeLine } from './lineEdit'
 import { child } from './pdfObject'
+import { renderPrintPage } from './printing'
 import type {
   AnnotData,
   AnnotKind,
@@ -26,6 +27,7 @@ import type {
   OutlineNode,
   PageInfo,
   Point,
+  PrintRenderOptions,
   Quad,
   Rect,
   RedactFill,
@@ -663,21 +665,8 @@ export class Engine {
     }
   }
 
-  renderForPrint(docId: string, pageIndex: number, dpi: number): Uint8Array<ArrayBuffer> {
-    const entry = this.entry(docId)
-    const page = this.page(entry, pageIndex)
-    const b = page.getBounds()
-    const scale = dpi / 72
-    const matrix = mupdf.Matrix.concat(mupdf.Matrix.translate(-b[0], -b[1]), mupdf.Matrix.scale(scale, scale))
-    const pix = page.toPixmap(matrix, mupdf.ColorSpace.DeviceRGB, false, true, 'Print')
-    try {
-      const jpeg = pix.asJPEG(88)
-      const copy = new Uint8Array(jpeg.length)
-      copy.set(jpeg)
-      return copy
-    } finally {
-      pix.destroy()
-    }
+  renderForPrint(docId: string, pageIndex: number, options: PrintRenderOptions): Uint8Array<ArrayBuffer> {
+    return renderPrintPage(this.page(this.entry(docId), pageIndex), options)
   }
 
   getTextLines(docId: string, pageIndex: number): TextLine[] {

@@ -237,6 +237,13 @@ export interface ExportOptions {
   decimalMark: DecimalMark
 }
 
+export interface PrintRenderOptions {
+  dpi: number
+  gray: boolean
+  markups: boolean
+  turn: boolean
+}
+
 export interface SaveOptions {
   flatten?: boolean
 }

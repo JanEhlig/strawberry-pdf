@@ -50,6 +50,8 @@ export interface Inspection {
   text: string[]
   lines: { page: number; text: string; font: string; size: number }[]
   rotation: number[]
+  sizes: [number, number][]
+  images: { page: number; bbox: number[] }[]
 }
 
 export function inspect(file: string): Inspection {

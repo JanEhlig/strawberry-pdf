@@ -8,7 +8,7 @@ import { APP_ORIGIN, handleAppScheme, registerAppSchemeAsPrivileged } from './pr
 import { addRecent, getRecent, loadStore, removeRecent, saveStore, writeFileAtomic } from './storage'
 import { installedFonts } from './fontIndex'
 import { matchFonts } from './fontMatch'
-import { printPages } from './print'
+import { listPrinters, printPages } from './print'
 
 const isDev = !app.isPackaged && !!process.env['ELECTRON_RENDERER_URL']
 
@@ -195,6 +195,7 @@ function registerIpc(): void {
     BrowserWindow.fromWebContents(event.sender)?.setTitle(title)
   })
 
+  ipcMain.handle('print:printers', (event) => listPrinters(event.sender))
   ipcMain.handle('print:pages', (event, job: PrintJob) =>
     printPages(BrowserWindow.fromWebContents(event.sender), job)
   )
